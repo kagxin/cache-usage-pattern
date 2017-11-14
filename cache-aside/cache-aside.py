@@ -17,7 +17,6 @@ for value in values:
     print(value)
 
 
-
 r = redis.Redis()
 
 print(r.get('test'))
