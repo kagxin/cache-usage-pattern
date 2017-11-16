@@ -18,8 +18,10 @@ cache-aside-pattern
         delete_data_of_cache(id)
         将数据更新过的数据保存到数据库中，
         然后失效对应缓存。
-"""
 
+dog-pile-effect:
+    防止缓存失效时，同时有很多个并发请求导致的，数据库压力陡增的问题（dog-pile-effct），通过cache中的key锁保证。
+"""
 
 
 
@@ -35,26 +37,30 @@ class ArticleDetailView(BaseView):
             raise Http404('未找到对应文章.')
 
     def get(self, request, *args, **kwargs):  # cache-aside 读方式
-        article_detail = cache.get('article:detail:%d' % self.article.id) # 从缓存中取数据
+
+        # 防止缓存失效时，同时有很多个并发请求导致的，数据库压力陡增的问题（dog-pile-effct），通过锁保证。
+        with DogPileLock('lock_article:detail:%d' % self.article.id, cache):
+            article_detail = cache.get('article:detail:%d' % self.article.id) # 从缓存中取数据
+
         if article_detail:  # 命中缓存
             return JsonResponse(article_detail, safe=False)  # 直接返回
-        else:  # 未命中缓存 
+        else:  # 未命中缓存
             article_detail = article_detail_info(self.article)  # 从数据库中去取数据
             cache.set('article:detail:%d' % self.article.id, article_detail, 10)  # 更新缓存，过期时间为10s
 
         return JsonResponse(article_detail)  # 返回数据
 
     def post(self, request, *args, **kwargs):  # update更新数据接口.(更新的 HTTP原语为PUT,为使用表单使用了post)
-        f = ArticleFrom(request.POST, instance=self.article)  #更新article数据
+        f = ArticleFrom(request.POST, instance=self.article)  # 更新article数据
         if f.is_valid():
-            article = f.save()   #更新成功
+            article = f.save()   # 更新成功
             cache.delete('article:detail:%d' % article.id)  # 失效缓存.
             return HttpResponse(status=201)
         else:
             return JsonResponse(f.errors, status=400)
 
     def delete(self, request, *args, **kwargs):
-        self.article.delete() #删除成功
+        self.article.delete() # 删除成功
         cache.delete('article:detail:%d' % self.article.id)  # 失效缓存.
         return HttpResponse(status=201)
 
