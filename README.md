@@ -1,15 +1,24 @@
 ### cache aside
 
-#### 1、读操作
-```buildoutcfg
-        @命中缓存：直接从cache中取出数据返回。
-        @缓存失效：应用程序从cache中读取数据，没有等到对应的数据，
-        	则从SoR中读取对应数据，放入cache中，然后返回数据。
-```
-#### 2、写数据
-```buildoutcfg
-        @将数据存入数据库，成功后使cache失效。
-```
+    cache-aside-pattern
+
+    伪代码:
+        读取数据:
+            data = get_data_form_cache(id)
+            if data:
+                return data
+            else:
+                data = get_data_form_sor(id)
+                set_data_to_cache(id, data, expire)
+                return data
+            先从缓存中获取数据，如果获取到数据（命中缓存），就直接返回数据。
+            如果未获取到数据就从数据库中获取数据，并更新缓存，然后返回数据。
+        更新数据：
+            save_update_data_to_sor(id, update_data)
+            delete_data_of_cache(id)
+            将数据更新过的数据保存到数据库中，
+            然后失效对应缓存。
+    next ----> 消除dog pile effect
 ### cache as SoR
 #### read through
 #### write through

@@ -1,12 +1,10 @@
 from django.views.generic import View
-from django.http import HttpResponse, JsonResponse, Http404
+from django.http import HttpResponse, JsonResponse, Http404, HttpRequest
 from django.forms import ModelForm
 from app.models import Article, Comment
 from django.core.cache import cache
-from django.views.decorators.cache import cache_page
-from django_redis import get_redis_connection
 
-con = get_redis_connection("default")
+# conn = get_redis_connection("default")
 
 # Create your views here.
 
@@ -31,13 +29,13 @@ class BaseView(View):
         return super(BaseView, self).dispatch(request, *args, **kwargs)
 
 
-class ArticleListView(View):
+class ArticleListView(BaseView):
     model = Article
     form = ArticleFrom
 
-    def get(self, *args, **kwargs):
-        articles = map(article_list_info, Article.objects.all())
-        return JsonResponse(list(articles), safe=False)
+    def get(self, request, *args, **kwargs):
+        articles = list(map(article_list_info, Article.objects.all()))  
+        return JsonResponse(articles, safe=False)  
 
     def post(self, request, *args, **kwargs):
 
@@ -59,13 +57,30 @@ class ArticleDetailView(BaseView):
         except Article.DoesNotExist:
             raise Http404('未找到对应文章.')
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):  # cache-aside 读方式
+        article_detail = cache.get('article:detail:%d' % self.article.id) # 从缓存中取数据
+        if article_detail:  # 命中缓存
+            return JsonResponse(article_detail, safe=False)  # 直接返回
+        else:  # 未命中缓存 
+            article_detail = article_detail_info(self.article)  # 从数据库中去取数据
+            cache.set('article:detail:%d' % self.article.id, article_detail, 10)  # 更新缓存，过期时间为10s
 
-        return JsonResponse(article_detail_info(self.article), status=201)
+        return JsonResponse(article_detail)  # 返回数据
+
+    def post(self, request, *args, **kwargs):  # update更新数据接口.(更新的 HTTP原语为PUT,为使用表单使用了post)
+        f = ArticleFrom(request.POST, instance=self.article)  #更新article数据
+        if f.is_valid():
+            article = f.save()   #更新成功
+            cache.delete('article:detail:%d' % article.id)  # 失效缓存.
+            return HttpResponse(status=201)
+        else:
+            return JsonResponse(f.errors, status=400)
 
     def delete(self, request, *args, **kwargs):
-        self.article.delete()
-        return HttpResponse(status=201) 
+        self.article.delete() #删除成功
+        cache.delete('article:detail:%d' % self.article.id)  # 失效缓存.
+        return HttpResponse(status=201)
+
 
 class CommentView(BaseView):
 
@@ -78,7 +93,7 @@ class CommentView(BaseView):
 
     def get(self, request, *args, **kwargs):
         comments = list(map(article_comments_info, self.article.comments.all()))
-        return JsonResponse(comments, safe=False) 
+        return JsonResponse(comments, safe=False)
 
     def post(self, request, *args, **kwargs):
         f = CommentFrom(request.POST)

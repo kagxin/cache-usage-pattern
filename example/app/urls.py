@@ -6,7 +6,8 @@ Created on 2017年11月14日
 '''
 
 
-from django.conf.urls import url, include
+from django.conf.urls import url
+from django.views.decorators.cache import cache_page
 from app.views import TestView, ArticleListView, ArticleDetailView, CommentView
 
 urlpatterns = [
