@@ -1,5 +1,8 @@
 ### cache aside
 
+![示意图](./image/cache_aside.jpg)
+
+
 ##### 读取数据伪代码:
 ```
     data = get_data_form_cache(identify)
