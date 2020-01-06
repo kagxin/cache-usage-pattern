@@ -1,4 +1,4 @@
-### cache aside
+### Cache Aside（旁路缓存）策略
 
 ![示意图](./image/cache_aside.jpg)
 
@@ -28,9 +28,11 @@
 * 通过cache中的key锁保证。
 
 
-### cache as SoR
-#### read through
-#### write through
-#### write behind
+### Read/Write Through（读穿 / 写穿）策略
+
+
+### Write Back（写回）策略
+
+
 
     
