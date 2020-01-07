@@ -1,6 +1,6 @@
 ### Cache Aside（旁路缓存）策略
 
-![示意图](./image/cache_aside.jpg)
+![Cache Aside](./image/cache_aside.jpg)
 
 
 ##### 读取数据伪代码:
@@ -30,9 +30,18 @@
 
 ### Read/Write Through（读穿 / 写穿）策略
 
+![Read/Write Through](./image/read_write_through.jpg)
+
+* 用户代码直接读写缓存，需要中间件支持
+* Read/Write Through（读穿 / 写穿）策略 需要缓存中间件支持，常见的redis，memcached 不支持该模式
+
 
 ### Write Back（写回）策略
 
+![Read/Write Through](./image/write_back.jpg)
+
+* 图中其中标记为脏的数据，是新写入的数据，与db数据不一致
+* 操作系统使用缓存模式
+* 关机之后可能会丢失未保存的数据也是因为使用这种缓存模式的原因
 
 
-    
