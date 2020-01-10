@@ -75,6 +75,9 @@
 ![带布隆过滤器的cache aside](image/bloom_filter_cache_aside.jpg)
 
 
-
+ref:
+https://github.com/jaybaird/python-bloomfilter/blob/master/pybloom/pybloom.py
+https://gist.github.com/marcan/23e1ec416bf884dcd7f0e635ce5f2724
+https://cloud.tencent.com/developer/article/1006122
 
 
